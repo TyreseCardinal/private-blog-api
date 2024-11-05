@@ -1,8 +1,11 @@
 # app/routes/auth_routes.py
+from logging.config import IDENTIFIER
+from flask_bcrypt import bcrypt
 from flask import Blueprint, request, jsonify
 from app.models.user import User
-from app import db, bcrypt
+from app import db
 from flask_jwt_extended import create_access_token
+from werkzeug.security import generate_password_hash, check_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -30,16 +33,16 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    """
-    Log in a user and return an access token if successful.
-    """
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+    identifier = request.json.get('identifier')
+    password = request.json.get('password')
 
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-        access_token = create_access_token(identity={'username': username})
-        return jsonify({"access_token": access_token}), 200
-    else:
-        return jsonify({"message": "Invalid credentials"}), 401
+    user = User.query.filter(
+        (User.username == identifier) | (User.email == identifier)
+    ).first()
+
+    if user and bcrypt.checkpw(password.encode('utf-8'), user.password_hash.encode('utf-8')):
+        access_token = create_access_token(identity=user.id)
+        return jsonify(access_token=access_token), 200
+
+    # Return an error response if authentication fails
+    return jsonify({"error": "Invalid username or password"}), 401

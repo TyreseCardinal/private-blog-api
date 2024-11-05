@@ -1,5 +1,6 @@
 # app/__init__.py
 from flask import Flask
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -21,7 +22,7 @@ def create_app(config_name):
         Flask app instance configured with the specified settings.
     """
     app = Flask(__name__)
-    
+    CORS(app)
     # Load the specified configuration from the config object
     app.config.from_object(config[config_name])
 
